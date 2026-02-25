@@ -53,7 +53,7 @@ int solicitar_entero()
 
 		for (i = 0; i < y; i++)
 		{
-			if (isdigit(Aux[i])) /*Con una bandera valida que el caracter leido de una cadena sea un digito*/
+			if (isdigit(Aux[i])) /*Con una bandera_signos valida que el caracter leido de una cadena sea un digito*/
 				p = 1;
 			else
 				p = 0;
@@ -75,10 +75,10 @@ int solicitar_entero()
 int signo_valido(char signo)
 {
     int es_valido, i;
-    char signos_validos[] = {'+', '-', '/', '*', '^', '(', ')'};
+    char signos_validos[] = {'+', '-', '/', '*', '^', '(', ')', '='};
     es_valido = 0;
 
-    for (i = 0; i < 7; i++)
+    for (i = 0; i < 8; i++)
     {
         if (signo == signos_validos[i])
             es_valido = 1;
@@ -89,10 +89,18 @@ int signo_valido(char signo)
 
 int validacion_infija(char expinf[])
 {
-    int bandera, parentesis, i;
-    parentesis = 0;
-    bandera = 0;
+    int bandera_signos, bandera_parentesis, parentesis_vacio, num_parentesis, i;
+    parentesis_vacio = 0;
+    num_parentesis = 0;
+    bandera_parentesis = 0;
+    bandera_signos = 0;
     i = 0;
+
+    if(expinf[i] == '\0')
+    {
+        printf("\nExpresion invalida, favor de ingresar una correcta\n");
+        return 0;
+    }
 
     while (expinf[i] != '\0')
     {
@@ -107,21 +115,40 @@ int validacion_infija(char expinf[])
 
         if (expinf[i] == '(')
         {
-            parentesis++;
+            parentesis_vacio = 1;
+            bandera_signos++;
+            if (bandera_parentesis == 1) 
+            {
+                printf("\nExpresion invalida, favor de ingresar una correcta\n");
+                return 0;
+            }
+            bandera_parentesis = 0;
+            num_parentesis++;
             i++;
             continue;
         }
         else if (expinf[i] == ')')
         {
-            parentesis--;
+            if (parentesis_vacio) {
+                printf("\nExpresion invalida, favor de ingresar una correcta\n");
+                return 0;
+            }
+            bandera_parentesis = 1;
+            num_parentesis--;
+            if (num_parentesis < 0)
+            {
+                printf("\nExpresion invalida, favor de ingresar una correcta\n");
+                return 0;
+            }
             i++;
             continue;
         }
 
         if (signo_valido(expinf[i]))
         {
-            bandera++;
-            if (bandera == 2)
+            bandera_parentesis = 0;
+            bandera_signos++;
+            if (bandera_signos == 2)
             {
                 printf("\nExpresion invalida, favor de ingresar una correcta\n");
                 return 0;
@@ -129,13 +156,16 @@ int validacion_infija(char expinf[])
         }
         else
         {
-            bandera = 0;
+            bandera_parentesis = 1;
+            bandera_signos = 0;
         }
+
+        parentesis_vacio = 0;
 
         i++;
     }
 
-    if (parentesis != 0)
+    if (num_parentesis != 0)
     {
         printf("\nExpresion invalida, favor de ingresar una correcta\n");
         return 0;
@@ -164,50 +194,55 @@ int prioridad(char signo)
     case '-':
         valor_prioridad = 1;
         break;
+    case '=':
+        valor_prioridad = 0;
+        break;
+    default:
+        valor_prioridad = -1;
     }
     return valor_prioridad;
 }
 
 void conversion_postfija(char expinf[], char exppos[])
 {
-    int top = -1, i = 0, c_pos = 0;
+    int top = -1, i = 0, j = 0;
     char pila[TAM];
 
     while (expinf[i] != '\0')
     {
-        if (expinf[i] == '(')
+
+        if (!ispunct(expinf[i]))
+        {
+            exppos[j++] = expinf[i];
+        }
+        else if (expinf[i] == '(')
         {
             pila[++top] = expinf[i];
         }
+        else if (expinf[i] == ')')
+        {
+            while (top != -1 && pila[top] != '(')
+            {
+                exppos[j++] = pila[top--];
+            }
+
+            top--;
+        }
         else
         {
-            if (expinf[i] == ')')
+            while (top != -1 && pila[top] != '(' &&
+                   (prioridad(pila[top]) > prioridad(expinf[i]) ||
+                    (prioridad(pila[top]) == prioridad(expinf[i]) && (expinf[i] != '^'))))
             {
-                while (pila[top] != '(' && top > (-1))
-                    exppos[c_pos++] = pila[top--];
-                if (top > (-1))
-                    top--;
+                exppos[j++] = pila[top--];
             }
-            else
-            {
-                if (!ispunct(expinf[i]))
-                    exppos[c_pos++] = expinf[i];
-                else
-                {
-                    while (top > (-1) && prioridad(expinf[i]) < prioridad(pila[top]))
-                    {
-                        if (pila[top] != '(')
-                            exppos[c_pos++] = pila[top];
-                        --top;
-                    }
-                    top++;
-                    pila[top] = expinf[i];
-                }
-            }
+            pila[++top] = expinf[i];
         }
+
         i++;
     }
-    while (top > (-1))
-        exppos[c_pos++] = pila[top--];
-    exppos[c_pos] = '\0';
+    while (top != -1)
+        exppos[j++] = pila[top--];
+
+    exppos[j] = '\0';
 }
