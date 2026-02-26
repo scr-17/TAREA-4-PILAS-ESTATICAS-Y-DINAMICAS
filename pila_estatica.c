@@ -1,16 +1,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
-#define TAM 30
+#include <string.h>
+#define TAM 60
 
+/*Funcion para validar entrada de enteros para menus*/
 int solicitar_entero();
 
-int signo_valido(char);
+/*Funcion para validar si algun operador es correcto*/
+int operador_valido(char);
 
+/*Funcion para validar una cadena y verificar si es infija*/
 int validacion_infija(char[]);
 
+/*Funcion para determinar el valor de priorirdad de un operador*/
 int prioridad(char);
 
+/*Funcion de conversion de infija a postfija*/
 void conversion_postfija(char[], char[]);
 
 int main()
@@ -20,13 +26,16 @@ int main()
     int op = 1;
 
     do {
-        printf("\n\tCONVERSION DE NOTACION INFIJA A POSFIJA\n\n");
+        printf("\n\tCONVERSION DE NOTACION INFIJA A POSFIJA ESTATICA\n\n");
         printf("\nIngrese una expresion en notacion infija: ");
-        gets(inf);
+        fgets(inf, sizeof(inf), stdin);
+        inf[strcspn(inf, "\n\r")] = '\0';
+        /*Validamos si la cadena obtenida es valida*/
         if(validacion_infija(inf)) {
             conversion_postfija(inf, pos);
             printf("\nNotacion infija: %s\nNotacion posfija: %s\n\n", inf, pos);
             printf("Desea realizar otra conversion?\n1 - Si\n0 - No\n> ");
+            /*Obtenemos la opcion del menu*/
             op = solicitar_entero();
             while (op != 1 && op != 0) {
                 printf("Valor fuera de rango, favor de ingresar una opcion correcta: ");
@@ -53,7 +62,7 @@ int solicitar_entero()
 
 		for (i = 0; i < y; i++)
 		{
-			if (isdigit(Aux[i])) /*Con una bandera_signos valida que el caracter leido de una cadena sea un digito*/
+			if (isdigit(Aux[i])) /*Con una bandera valida que el caracter leido de una cadena sea un digito*/
 				p = 1;
 			else
 				p = 0;
@@ -72,15 +81,17 @@ int solicitar_entero()
 	return num;
 }
 
-int signo_valido(char signo)
+int operador_valido(char operador)
 {
     int es_valido, i;
-    char signos_validos[] = {'+', '-', '/', '*', '^', '(', ')', '='};
+    /*Los operadores validos son los vistos en clase, siendo estos los básicos de suma, resta
+    multiplicacion, división, exponente, parentesis e igualdad*/
+    char operadores_validos[] = {'+', '-', '/', '*', '^', '(', ')', '='};
     es_valido = 0;
 
     for (i = 0; i < 8; i++)
     {
-        if (signo == signos_validos[i])
+        if (operador == operadores_validos[i])
             es_valido = 1;
     }
 
@@ -89,14 +100,17 @@ int signo_valido(char signo)
 
 int validacion_infija(char expinf[])
 {
-    int bandera_signos, bandera_parentesis, parentesis_vacio, num_parentesis, i;
+    /*Mediante distintas banderas, validamos la expresion para ver si es correcta*/
+    int bandera_operadores, bandera_operandos, bandera_parentesis, parentesis_vacio, num_parentesis, i;
     parentesis_vacio = 0;
     num_parentesis = 0;
     bandera_parentesis = 0;
-    bandera_signos = 0;
+    bandera_operadores = 0;
+    bandera_operandos = 0;
     i = 0;
 
-    if(expinf[i] == '\0')
+    /*En caso de que este vacia o sea un solo operando*/
+    if(expinf[i] == '\0' || strlen(expinf) == 1)
     {
         printf("\nExpresion invalida, favor de ingresar una correcta\n");
         return 0;
@@ -104,19 +118,30 @@ int validacion_infija(char expinf[])
 
     while (expinf[i] != '\0')
     {
-        if ((i == 0 && (expinf[i] != '(' && (!isalpha(expinf[i])) && expinf[i] != ' ')) 
-        || (expinf[i + 1] == '\0' && (expinf[i] != ')' && (!isalpha(expinf[i]) && expinf[i] != ' '))) 
-        || (!signo_valido(expinf[i]) && (!isalpha(expinf[i]) && expinf[i] != ' ')))
+        /*Primera validación por si el primer elemento es un operando
+        Segunda valifacion por si el último elemento es un operando
+        Tercera validacion por si cualquier elemento no es operador valido ni operando o espacio*/
+        if ((i == 0 && (expinf[i] != '(' && (!isalpha(expinf[i])))) 
+        || (expinf[i + 1] == '\0' && (expinf[i] != ')' && (!isalpha(expinf[i])))) 
+        || (!operador_valido(expinf[i]) && (!isalpha(expinf[i]) && expinf[i] != ' ')))
         {
 
             printf("\nExpresion invalida, favor de ingresar una correcta\n");
             return 0;
         }
 
+        /*En caso de que el caracter sea un espacio, se continua el recorrido*/
+        if(expinf[i] == ' '){
+            i++;
+            continue;
+        }
+
+        /*Si el caracter es un parentesis izquierdo*/
         if (expinf[i] == '(')
         {
             parentesis_vacio = 1;
-            bandera_signos++;
+            bandera_operadores++;
+            /*Bandera parentesis checa que el parentesis derecho no vaya antes que el izquiero*/
             if (bandera_parentesis == 1) 
             {
                 printf("\nExpresion invalida, favor de ingresar una correcta\n");
@@ -127,14 +152,17 @@ int validacion_infija(char expinf[])
             i++;
             continue;
         }
+        /*Si el caracter es un parentesis derecho*/
         else if (expinf[i] == ')')
         {
+            /*Parentesis vacio checa que haya elementos dentro de un parentesis, caso contario, salta error*/
             if (parentesis_vacio) {
                 printf("\nExpresion invalida, favor de ingresar una correcta\n");
                 return 0;
             }
             bandera_parentesis = 1;
             num_parentesis--;
+            /*Num parentesis checa que no haya pares de parentesis sin su par*/
             if (num_parentesis < 0)
             {
                 printf("\nExpresion invalida, favor de ingresar una correcta\n");
@@ -144,20 +172,30 @@ int validacion_infija(char expinf[])
             continue;
         }
 
-        if (signo_valido(expinf[i]))
+        /*En caso de que el caracter sea un operador*/
+        if (operador_valido(expinf[i]))
         {
+            bandera_operadores++;
             bandera_parentesis = 0;
-            bandera_signos++;
-            if (bandera_signos == 2)
+            bandera_operandos = 0;
+            /*Bandera operadores verifica que no haya dos operadores juntos*/
+            if (bandera_operadores == 2)
             {
                 printf("\nExpresion invalida, favor de ingresar una correcta\n");
                 return 0;
             }
         }
-        else
+        else if(isalpha(expinf[i]))
         {
+            bandera_operandos++;
             bandera_parentesis = 1;
-            bandera_signos = 0;
+            bandera_operadores = 0;
+            /*Bandera operandos verifica que no haya dos operandos juntos*/
+            if (bandera_operandos == 2)
+            {
+                printf("\nExpresion invalida, favor de ingresar una correcta\n");
+                return 0;
+            }
         }
 
         parentesis_vacio = 0;
@@ -174,10 +212,11 @@ int validacion_infija(char expinf[])
     return 1;
 }
 
-int prioridad(char signo)
+int prioridad(char operador)
 {
+    /*Les damos la prioridad a los signos de la expresion*/
     int valor_prioridad;
-    switch (signo)
+    switch (operador)
     {
     case '^':
         valor_prioridad = 3;
@@ -210,15 +249,18 @@ void conversion_postfija(char expinf[], char exppos[])
 
     while (expinf[i] != '\0')
     {
-
+        /*Si el caracter no es un operador, agregamos el caracter a la expresion*/
         if (!ispunct(expinf[i]))
         {
             exppos[j++] = expinf[i];
         }
+        /*Si el caracter es un parentesis izquierdo, lo agregamos a la pila sobre los demás*/
         else if (expinf[i] == '(')
         {
             pila[++top] = expinf[i];
         }
+        /*Si el caracter es un parentesis derecho, retiramos todo el contenido de la pila
+        hasta encontrar el parentesis izquierdo y lo añadimos a la expresion*/
         else if (expinf[i] == ')')
         {
             while (top != -1 && pila[top] != '(')
@@ -228,6 +270,8 @@ void conversion_postfija(char expinf[], char exppos[])
 
             top--;
         }
+        /*Si el caracter es un operador, mediante un ciclo añadimos los caracteres hasta
+        que encontremos uno con prioridad igual o mayor*/
         else
         {
             while (top != -1 && pila[top] != '(' &&
@@ -241,8 +285,11 @@ void conversion_postfija(char expinf[], char exppos[])
 
         i++;
     }
+
+    /*Añadimos los caracteres restantes a la expresion*/
     while (top != -1)
         exppos[j++] = pila[top--];
 
+    /*Convertimos el ultimo caracter al caracter de fin de cadena*/
     exppos[j] = '\0';
 }
