@@ -31,6 +31,9 @@ int main()
         fgets(inf, sizeof(inf), stdin);
         inf[strcspn(inf, "\n\r")] = '\0';
         /*Validamos si la cadena obtenida es valida*/
+        printf("\n\tCONVERSION DE NOTACION INFIJA A POSFIJA\n\n");
+        printf("\nIngrese una expresion en notacion infija: ");
+        gets(inf);
         if(validacion_infija(inf)) {
             conversion_postfija(inf, pos);
             printf("\nNotacion infija: %s\nNotacion posfija: %s\n\n", inf, pos);
@@ -92,6 +95,15 @@ int operador_valido(char operador)
     for (i = 0; i < 8; i++)
     {
         if (operador == operadores_validos[i])
+int signo_valido(char signo)
+{
+    int es_valido, i;
+    char signos_validos[] = {'+', '-', '/', '*', '^', '(', ')'};
+    es_valido = 0;
+
+    for (i = 0; i < 7; i++)
+    {
+        if (signo == signos_validos[i])
             es_valido = 1;
     }
 
