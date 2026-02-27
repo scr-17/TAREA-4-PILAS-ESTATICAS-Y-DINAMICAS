@@ -27,8 +27,10 @@ int main()
 
     do {
         printf("\n\tCONVERSION DE NOTACION INFIJA A POSFIJA ESTATICA\n\n");
-        printf("\nIngrese una expresion en notacion infija: ");
+        printf("\nIngrese una expresion en notacion infija (Solo operandos alfabeticos): ");
+        fflush(stdin);
         fgets(inf, sizeof(inf), stdin);
+        fflush(stdin);
         inf[strcspn(inf, "\n\r")] = '\0';
         /*Validamos si la cadena obtenida es valida*/
         if(validacion_infija(inf)) {
